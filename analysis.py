@@ -19,6 +19,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import classification_report, confusion_matrix, r2_score, mean_absolute_percentage_error, \
     accuracy_score
 from functools import reduce
+import time
 
 COLORS = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 TAB = '    '
@@ -51,7 +52,7 @@ averageScoreDelta = 0.1
 
 tMax = 1.0 * averageScoreDelta
 tMin = 0.1 * averageScoreDelta
-tMult = 0.9
+tMult = 0.99
 
 
 def load_data(scrub=None, **params):
@@ -460,13 +461,20 @@ def kNN(corr_list, y_axis, k=5, **params):
 
 
 def local_change(weights):
-    new_weights = list()
     signs = [1, -1]
-    for w in weights:
-        coef = -w - 1
-        while w + coef < 0:
-            coef = random.choice(signs) * random.normalvariate(0, 0.5)
-        new_weights.append(w + coef)
+
+    ind = random.randint(0, len(weights) - 1)
+    weight = weights[ind]
+
+    coef = -weight - 1
+    while weight + coef < 0:
+        rnd = random.random()
+        coef = random.choice(signs) * rnd
+
+    new_weight = weight + coef
+
+    new_weights = weights.copy()
+    new_weights[ind] = new_weight
     return new_weights
 
 
@@ -479,6 +487,7 @@ def count_score(data, weights):
 
 
 def annealing(data):
+    start_time = time.time()
     X_train, X_test, y_train, y_test = data
 
     old_weights = [1] * X_train.shape[1]
@@ -487,14 +496,12 @@ def annealing(data):
     best_weights = list()
 
     t = tMax
-    deltas = list()
-    count = 0
+    iterations = 0
     while t >= tMin:
-        count += 1
+        iterations += 1
         t *= tMult
         new_weights = local_change(old_weights)
         new_score = count_score(data, new_weights)
-        deltas.append(abs(new_score - old_score))
         if not (new_score > old_score or random.random() <= e ** ((new_score - old_score) / t)):
             continue
         old_weights = new_weights
@@ -502,10 +509,19 @@ def annealing(data):
             best_score = new_score
             best_weights = new_weights.copy()
 
-    deltas_mean = pd.Series(deltas).mean()
+    results = [best_score,
+               best_weights,
+               iterations,
+               time.time() - start_time,
+               y_train.size,
+               y_test.size]
 
-    results = [best_score, best_weights, deltas_mean, count]
-    labels = ['Best score', 'Optimal weights', 'Deltas mean', 'Iterations performed']
+    labels = ['Best score',
+              'Optimal weights',
+              'Iterations performed',
+              'Annealing time (seconds)',
+              'Training entries',
+              'Testing entries']
 
     return results, labels
 
@@ -520,8 +536,20 @@ corr1 = 'total_cases'
 corr2 = 'total_vaccinations'
 corr_name = 'k_v/c'
 
-corr_list = ['population_density', 'gdp_per_capita', 'median_age', 'people_vaccinated_per_hundred',
-             'human_development_index']
+corr_list = [
+    'population_density',
+    'gdp_per_capita',
+    'hospital_beds_per_thousand',
+    'handwashing_facilities',
+
+    'people_vaccinated_per_hundred',
+
+    'diabetes_prevalence',
+    'cardiovasc_death_rate',
+
+    'aged_65_older',
+    'aged_70_older'
+]
 
 """
 countries_histogram('new_deaths_per_million', countries_entry, logy=True)
@@ -529,4 +557,5 @@ countries_plot(x_axis, y_axis, countries_entry, mode='line', regression=False, l
 linear_rate_corr(corr1, corr2, corr_name, y_axis='total_cases_per_million', make_bins=False, regression=True, logy=True, date=CUSTOM_DATE)
 inter_countries_plot(x_axis, y_axis, mode='scatter', mean=True, make_bins=True, regression=True)
 """
+
 kNN(corr_list, y_axis, file='kNN_results.txt')

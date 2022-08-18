@@ -1,11 +1,17 @@
-Best score                              :        0.08
+Best score                              :        0.75
 
 Optimal weights                         
-    1. gdp_per_capita                   :        3.58
-    2. people_vaccinated_per_hundred    :        2.77
-    3. population_density               :        0.77
-    4. human_development_index          :        0.60
-    5. median_age                       :        0.10
+    1. aged_65_older                    :        1.35
+    2. diabetes_prevalence              :        1.11
+    3. gdp_per_capita                   :        0.99
+    4. aged_70_older                    :        0.93
+    5. people_vaccinated_per_hundred    :        0.89
+    6. cardiovasc_death_rate            :        0.88
+    7. population_density               :        0.28
+    8. handwashing_facilities           :        0.26
+    9. hospital_beds_per_thousand       :        0.16
 
-Deltas mean                             :        0.26
-Iterations performed                    :        22.00
+Iterations performed                    :        230.00
+Annealing time (seconds)                :        181.73
+Training entries                        :        12874.00
+Testing entries                         :        1584.00
