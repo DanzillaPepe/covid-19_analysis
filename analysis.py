@@ -1,3 +1,5 @@
+import sys
+
 import pandas
 import scipy as sp
 from scipy import stats
@@ -19,6 +21,7 @@ from sklearn.metrics import classification_report, confusion_matrix, r2_score, m
 from functools import reduce
 
 COLORS = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+TAB = '    '
 
 FIG_SIZE = (21, 14)
 DOT_SIZE = 24
@@ -126,6 +129,13 @@ def get_date_str(date):
 
 def date_truncation(df, date):
     return df[df['date'] == get_date_str(date)]
+
+
+def max_str(arr):
+    arr = list(map(len, arr))
+    arr.sort()
+    arr.reverse()
+    return arr[0]
 
 
 def slope(xs, ys):
@@ -391,6 +401,11 @@ def inter_countries_plot(x_axis, y_axis, mode, **params):
 def kNN(corr_list, y_axis, k=5, **params):
     df = load_data(scrub=corr_list + [y_axis], **params)
 
+    if params.get('file'):
+        file = open(params['file'], 'w')
+    else:
+        file = sys.stdout
+
     X = df.loc[:, corr_list].values
     y = df.loc[:, y_axis].values
 
@@ -414,19 +429,34 @@ def kNN(corr_list, y_axis, k=5, **params):
     X_train = df_exluded.loc[:, corr_list].values
     y_train = df_exluded.loc[:, y_axis].values
 
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
-
     min_max_scaler = MinMaxScaler()
     X_train = min_max_scaler.fit_transform(X_train)
     X_test = min_max_scaler.transform(X_test)
 
     data = [X_train, X_test, y_train, y_test]
-    annealing(data)
+    results, labels = annealing(data)
 
-    """
-    y_pred = classifier.predict(X_test)
-    lr = LinearRegression().fit(X_train, y_train)
-    """
+    max_len = max(max_str(corr_list), max_str(labels)) + len(TAB) + len(str(len(corr_list))) + 2 + len(TAB)
+    label_format = '{:' + str(max_len) + 's}'
+    float_format = ':{:s}'.format(2 * TAB) + '{:0.2f}\n'
+
+    for i in range(len(results)):
+        result = results[i]
+        label = labels[i]
+        if type(result) is not list:
+            file.write((label_format + float_format).format(label, result))
+            if i == 0:
+                file.write('\n')
+        else:
+            file.write((label_format + '\n').format(label))
+
+            weights = [(corr_list[j], result[j]) for j in range(len(result))]
+            weights.sort(key=lambda w: -w[1])
+
+            for j in range(len(weights)):
+                label = '{:s}{:d}. '.format(TAB, j + 1) + weights[j][0]
+                file.write((label_format + float_format).format(label, weights[j][1]))
+            file.write('\n')
 
 
 def local_change(weights):
@@ -442,7 +472,7 @@ def local_change(weights):
 
 def count_score(data, weights):
     X_train, X_test, y_train, y_test = data
-    classifier = KNeighborsRegressor(n_neighbors=5, metric='wminkowski', p=2, metric_params={'w': weights})
+    classifier = KNeighborsRegressor(n_neighbors=5, metric='minkowski', p=2, metric_params={'w': weights})
     classifier.fit(X_train, y_train)
 
     return classifier.score(X_test, y_test)
@@ -458,20 +488,26 @@ def annealing(data):
 
     t = tMax
     deltas = list()
+    count = 0
     while t >= tMin:
+        count += 1
         t *= tMult
         new_weights = local_change(old_weights)
         new_score = count_score(data, new_weights)
-        deltas.append(new_score - old_score)
+        deltas.append(abs(new_score - old_score))
         if not (new_score > old_score or random.random() <= e ** ((new_score - old_score) / t)):
             continue
         old_weights = new_weights
         if new_score > best_score:
             best_score = new_score
             best_weights = new_weights.copy()
-    print('deltas mean = {:0.2f}'.format(pd.Series(deltas).mean()))
-    print('best score = {:0.2f}'.format(best_score))
-    print('best weights:', best_weights)
+
+    deltas_mean = pd.Series(deltas).mean()
+
+    results = [best_score, best_weights, deltas_mean, count]
+    labels = ['Best score', 'Optimal weights', 'Deltas mean', 'Iterations performed']
+
+    return results, labels
 
 
 countries_entry = ['United States', 'China', 'Russia', 'Spain', 'Ukraine', 'Germany', 'Georgia', 'Germany'][2]
@@ -493,4 +529,4 @@ countries_plot(x_axis, y_axis, countries_entry, mode='line', regression=False, l
 linear_rate_corr(corr1, corr2, corr_name, y_axis='total_cases_per_million', make_bins=False, regression=True, logy=True, date=CUSTOM_DATE)
 inter_countries_plot(x_axis, y_axis, mode='scatter', mean=True, make_bins=True, regression=True)
 """
-kNN(corr_list, y_axis)
+kNN(corr_list, y_axis, file='kNN_results.txt')

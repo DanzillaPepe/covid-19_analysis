@@ -1,0 +1,11 @@
+Best score                              :        0.08
+
+Optimal weights                         
+    1. gdp_per_capita                   :        3.58
+    2. people_vaccinated_per_hundred    :        2.77
+    3. population_density               :        0.77
+    4. human_development_index          :        0.60
+    5. median_age                       :        0.10
+
+Deltas mean                             :        0.26
+Iterations performed                    :        22.00
