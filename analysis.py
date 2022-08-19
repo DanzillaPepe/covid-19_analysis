@@ -1,5 +1,4 @@
 import sys
-
 import pandas
 import scipy as sp
 from scipy import stats
@@ -29,7 +28,7 @@ DOT_SIZE = 24
 LINE_WIDTH = 3
 X_TICKS = 30
 Y_TICKS = 30
-CUSTOM_DATE = dt.datetime.strptime('9.08.2021', '%d.%m.%Y')
+CUSTOM_DATE = dt.datetime.strptime('9.08.2020', '%d.%m.%Y')
 BINS = 60
 
 LEFT_MARGIN = 0.08
@@ -48,34 +47,81 @@ TICKS_STYLE = {'family': 'DejaVu Sans',
 
 matplotlib.rc('font', **TICKS_STYLE)
 
-averageScoreDelta = 0.1
+averageScoreDelta = 0.05
 
 tMax = 1.0 * averageScoreDelta
 tMin = 0.1 * averageScoreDelta
-tMult = 0.99
+tMult = 0.9999
 
 
-def load_data(scrub=None, **params):
+def load_data():
     df = pd.read_csv('data/owid-covid-data.csv')
-    if scrub:
-        scrub = make_list(scrub)
-        for column in scrub:
-            df = df[df[column].notna()]
-    if params.get('countries'):
-        df = country_truncation(df, params['countries'])
-    if params.get('except_countries'):
-        df = country_exclusion(df, params['except_countries'])
-    if params.get('date'):
-        df = date_truncation(df, params['date'])
     return df
 
 
 COUNTRIES_LIST = list(set(load_data()['location']))
 
 
+def preprocess(df):
+    df_prepr = df.copy()
+    for country in COUNTRIES_LIST:
+        df_c = country_truncation(df, country)
+        xs = df_c['total_cases']
+
+        ys = df_c['total_vaccinations']
+        k_vc = slope(xs, ys)
+        df_prepr.loc[df['location'] == country, 'k_v/c'] = k_vc
+
+        ys = df_c['total_deaths']
+        k_dc = slope(xs, ys)
+        df_prepr.loc[df['location'] == country, 'k_d/c'] = k_dc
+    return df_prepr
+
+
+def scrub_data(df, scrub, **params):
+    df_scrubbed = df.copy()
+    to_scrub = make_list(scrub)
+    for column in to_scrub:
+        df_scrubbed = df_scrubbed[df_scrubbed[column].notna()]
+
+    if params.get('countries'):
+        df_scrubbed = country_truncation(df_scrubbed, params['countries'])
+    if params.get('except_countries'):
+        df_scrubbed = country_exclusion(df_scrubbed, params['except_countries'])
+    if params.get('date'):
+        df_scrubbed = date_truncation(df_scrubbed, params['date'])
+    if params.get('one_sample_per_country'):
+        new_df = dict([('location', [])])
+        for country in COUNTRIES_LIST:
+            df_c = country_truncation(df_scrubbed, country)
+
+            if df_c.empty:
+                continue
+            new_df['location'].append(country)
+            for column in scrub:
+                to_add = df_c[column].mean(skipna=True)
+
+                if not new_df.get(column):
+                    new_df[column] = [to_add]
+                else:
+                    new_df[column].append(to_add)
+        df_scrubbed = pd.DataFrame(new_df)
+    return df_scrubbed
+
+
+def load_preprocess_scrub(scrub=None, **params):
+    df = load_data()
+    df = preprocess(df)
+    df = scrub_data(df, scrub, **params)
+
+    return df
+
+
 def make_list(lst):
-    if type(lst) is not list:
+    if type(lst) is not list and type(lst) is not None:
         return [lst]
+    elif type(lst) is None:
+        return list()
     return lst
 
 
@@ -83,6 +129,13 @@ def make_labels(labels, df_list):
     if labels is None:
         labels = [''] * len(df_list)
     return labels
+
+
+def max_str(arr):
+    arr = list(map(len, arr))
+    arr.sort()
+    arr.reverse()
+    return arr[0]
 
 
 def is_nan(x):
@@ -132,11 +185,8 @@ def date_truncation(df, date):
     return df[df['date'] == get_date_str(date)]
 
 
-def max_str(arr):
-    arr = list(map(len, arr))
-    arr.sort()
-    arr.reverse()
-    return arr[0]
+def write_formatted(file, label_format, formats, label, value):
+    file.write((label_format + formats[type(value)]).format(label, value))
 
 
 def slope(xs, ys):
@@ -347,7 +397,8 @@ def hist(df_list, x_axis, bins, labels=None, **params):
 
 
 def countries_histogram(x_axis, countries, **params):
-    df = load_data(scrub=x_axis, **params)
+    scrub = x_axis
+    df = load_preprocess_scrub(scrub, **params)
 
     if params.get('date'):
         df = date_truncation(df, params['date'])
@@ -363,7 +414,8 @@ def countries_histogram(x_axis, countries, **params):
 
 
 def countries_plot(x_axis, y_axis, countries_to_plot, mode, **params):
-    df = load_data(scrub=[x_axis, y_axis], **params)
+    scrub = [x_axis, y_axis]
+    df = load_preprocess_scrub(scrub, **params)
 
     df_list = list()
     for country in countries_to_plot:
@@ -377,7 +429,8 @@ def countries_plot(x_axis, y_axis, countries_to_plot, mode, **params):
 
 
 def linear_rate_corr(corr1, corr2, corr_name, y_axis, **params):
-    df = load_data(scrub=[corr1, corr2], **params)
+    scrub = [corr1, corr2]
+    df = load_preprocess_scrub(scrub, **params)
 
     for country in COUNTRIES_LIST:
         df_c = country_truncation(df, country)
@@ -394,13 +447,15 @@ def linear_rate_corr(corr1, corr2, corr_name, y_axis, **params):
 
 
 def inter_countries_plot(x_axis, y_axis, mode, **params):
-    df = load_data(scrub=[x_axis, y_axis], **params)
+    scrub = [x_axis, y_axis]
+    df = load_preprocess_scrub(scrub, **params)
 
     plot(df, x_axis, y_axis, None, mode=mode, **params)
 
 
 def kNN(corr_list, y_axis, k=5, **params):
-    df = load_data(scrub=corr_list + [y_axis], **params)
+    scrub = corr_list + [y_axis]
+    df = load_preprocess_scrub(scrub, **params)
 
     if params.get('file'):
         file = open(params['file'], 'w')
@@ -422,8 +477,8 @@ def kNN(corr_list, y_axis, k=5, **params):
 
         X_test += list(country_truncation(df, new_country).loc[:, corr_list].values)
         y_test += list(country_truncation(df, new_country).loc[:, y_axis].values)
-
         i += 1
+
     X_test, y_test = np.array(X_test), np.array(y_test)
 
     df_exluded = country_exclusion(df, countries_list)
@@ -435,102 +490,110 @@ def kNN(corr_list, y_axis, k=5, **params):
     X_test = min_max_scaler.transform(X_test)
 
     data = [X_train, X_test, y_train, y_test]
-    results, labels = annealing(data)
+    results, labels = annealing(data, k, corr_list)
+    results, labels = [y_axis] + results, ['Guessed parameter'] + labels
 
     max_len = max(max_str(corr_list), max_str(labels)) + len(TAB) + len(str(len(corr_list))) + 2 + len(TAB)
     label_format = '{:' + str(max_len) + 's}'
     float_format = ':{:s}'.format(2 * TAB) + '{:0.2f}\n'
+    int_format = ':{:s}'.format(2 * TAB) + '{:d}\n'
+    str_format = ':{:s}'.format(2 * TAB) + '{:s}\n'
+    formates = {np.float64: float_format, float: float_format, int: int_format, str: str_format}
 
     for i in range(len(results)):
         result = results[i]
         label = labels[i]
-        if type(result) is not list:
-            file.write((label_format + float_format).format(label, result))
-            if i == 0:
-                file.write('\n')
-        else:
+
+        if type(result) in formates.keys():
+            write_formatted(file, label_format, formates, label, result)
+        elif type(result) is list:
             file.write((label_format + '\n').format(label))
 
-            weights = [(corr_list[j], result[j]) for j in range(len(result))]
-            weights.sort(key=lambda w: -w[1])
+            lst = [(result[0][j], result[1][j]) for j in range(len(result[0]))]
+            lst.sort(key=lambda w: -w[0])
 
-            for j in range(len(weights)):
-                label = '{:s}{:d}. '.format(TAB, j + 1) + weights[j][0]
-                file.write((label_format + float_format).format(label, weights[j][1]))
+            for j in range(len(lst)):
+                label = '{:s}{:d}. '.format(TAB, j + 1) + lst[j][1]
+                write_formatted(file, label_format, formates, label, lst[j][0])
             file.write('\n')
 
 
 def local_change(weights):
-    signs = [1, -1]
-
     ind = random.randint(0, len(weights) - 1)
     weight = weights[ind]
 
-    coef = -weight - 1
-    while weight + coef < 0:
+    signs = [1, -1]
+    new_weight = -1
+    while new_weight < 0:
         rnd = random.random()
         coef = random.choice(signs) * rnd
-
-    new_weight = weight + coef
+        new_weight = weight + coef
 
     new_weights = weights.copy()
     new_weights[ind] = new_weight
     return new_weights
 
 
-def count_score(data, weights):
+def count_score(data, weights, k):
     X_train, X_test, y_train, y_test = data
-    classifier = KNeighborsRegressor(n_neighbors=5, metric='minkowski', p=2, metric_params={'w': weights})
+    classifier = KNeighborsRegressor(n_neighbors=k, metric='minkowski', p=2, metric_params={'w': weights})
     classifier.fit(X_train, y_train)
 
     return classifier.score(X_test, y_test)
 
 
-def annealing(data):
+def annealing(data, k, corr_list):
     start_time = time.time()
     X_train, X_test, y_train, y_test = data
 
     old_weights = [1] * X_train.shape[1]
-    old_score = count_score(data, old_weights)
+    old_score = count_score(data, old_weights, k)
     best_score = old_score
     best_weights = list()
 
     t = tMax
     iterations = 0
+    deltas = list()
     while t >= tMin:
         iterations += 1
         t *= tMult
+
         new_weights = local_change(old_weights)
-        new_score = count_score(data, new_weights)
+        new_score = count_score(data, new_weights, k)
+        deltas.append(abs(new_score - old_score))
         if not (new_score > old_score or random.random() <= e ** ((new_score - old_score) / t)):
             continue
         old_weights = new_weights
+        old_score = new_score
+
         if new_score > best_score:
             best_score = new_score
             best_weights = new_weights.copy()
 
+    print(pd.Series(deltas).mean())
     results = [best_score,
-               best_weights,
+               [best_weights, corr_list],
                iterations,
                time.time() - start_time,
-               y_train.size,
-               y_test.size]
+               y_train.size + y_test.size,
+               [[y_train.size, y_test.size], ['Training samples', 'Testing samples']]
+               ]
 
     labels = ['Best score',
               'Optimal weights',
               'Iterations performed',
               'Annealing time (seconds)',
-              'Training entries',
-              'Testing entries']
+              'All samples',
+              'Including']
 
     return results, labels
 
 
-countries_entry = ['United States', 'China', 'Russia', 'Spain', 'Ukraine', 'Germany', 'Georgia', 'Germany'][2]
+countries_entry = ['United States', 'China', 'Russia', 'Spain', 'Ukraine', 'Germany', 'Georgia', 'Germany', 'Zimbabwe']
 countries_entry = make_list(countries_entry)
 
-x_axis = 'date'
-y_axis = 'total_deaths_per_million'
+x_axis = 'total_cases'
+y_axis = 'k_d/c'
 
 corr1 = 'total_cases'
 corr2 = 'total_vaccinations'
@@ -542,13 +605,15 @@ corr_list = [
     'hospital_beds_per_thousand',
     'handwashing_facilities',
 
-    'people_vaccinated_per_hundred',
-
     'diabetes_prevalence',
     'cardiovasc_death_rate',
+    'male_smokers',
 
+    'median_age',
     'aged_65_older',
-    'aged_70_older'
+    'aged_70_older',
+
+    'k_v/c'
 ]
 
 """
@@ -557,5 +622,4 @@ countries_plot(x_axis, y_axis, countries_entry, mode='line', regression=False, l
 linear_rate_corr(corr1, corr2, corr_name, y_axis='total_cases_per_million', make_bins=False, regression=True, logy=True, date=CUSTOM_DATE)
 inter_countries_plot(x_axis, y_axis, mode='scatter', mean=True, make_bins=True, regression=True)
 """
-
-kNN(corr_list, y_axis, file='kNN_results.txt')
+kNN(corr_list, y_axis, file='kNN_results.txt', one_sample_per_country=True)
