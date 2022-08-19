@@ -27,12 +27,12 @@ FIG_SIZE = (21, 14)
 DOT_SIZE = 24
 LINE_WIDTH = 3
 X_TICKS = 30
-Y_TICKS = 30
-CUSTOM_DATE = dt.datetime.strptime('9.08.2020', '%d.%m.%Y')
+Y_TICKS = 20
+CUSTOM_DATE = dt.datetime.strptime('9.08.2022', '%d.%m.%Y')
 BINS = 60
 
-LEFT_MARGIN = 0.08
-RIGHT_MARGIN = 0.98
+LEFT_MARGIN = 0.1
+RIGHT_MARGIN = 0.95
 TOP_MARGIN = 0.95
 BOTTOM_MARGIN = 0.1
 
@@ -51,7 +51,7 @@ averageScoreDelta = 0.05
 
 tMax = 1.0 * averageScoreDelta
 tMin = 0.1 * averageScoreDelta
-tMult = 0.9999
+tMult = 0.99999
 
 
 def load_data():
@@ -449,6 +449,7 @@ def linear_rate_corr(corr1, corr2, corr_name, y_axis, **params):
 def inter_countries_plot(x_axis, y_axis, mode, **params):
     scrub = [x_axis, y_axis]
     df = load_preprocess_scrub(scrub, **params)
+    df = df[df[x_axis] < 100]
 
     plot(df, x_axis, y_axis, None, mode=mode, **params)
 
@@ -553,14 +554,12 @@ def annealing(data, k, corr_list):
 
     t = tMax
     iterations = 0
-    deltas = list()
     while t >= tMin:
         iterations += 1
         t *= tMult
 
         new_weights = local_change(old_weights)
         new_score = count_score(data, new_weights, k)
-        deltas.append(abs(new_score - old_score))
         if not (new_score > old_score or random.random() <= e ** ((new_score - old_score) / t)):
             continue
         old_weights = new_weights
@@ -570,7 +569,6 @@ def annealing(data, k, corr_list):
             best_score = new_score
             best_weights = new_weights.copy()
 
-    print(pd.Series(deltas).mean())
     results = [best_score,
                [best_weights, corr_list],
                iterations,
@@ -592,22 +590,13 @@ def annealing(data, k, corr_list):
 countries_entry = ['United States', 'China', 'Russia', 'Spain', 'Ukraine', 'Germany', 'Georgia', 'Germany', 'Zimbabwe']
 countries_entry = make_list(countries_entry)
 
-x_axis = 'total_cases'
-y_axis = 'k_d/c'
-
-corr1 = 'total_cases'
-corr2 = 'total_vaccinations'
-corr_name = 'k_v/c'
-
 corr_list = [
     'population_density',
     'gdp_per_capita',
     'hospital_beds_per_thousand',
-    'handwashing_facilities',
 
     'diabetes_prevalence',
     'cardiovasc_death_rate',
-    'male_smokers',
 
     'median_age',
     'aged_65_older',
@@ -616,10 +605,11 @@ corr_list = [
     'k_v/c'
 ]
 
+# kNN(corr_list=corr_list, y_axis='total_cases_per_million', file='kNN_results.txt', one_sample_per_country=True)
+
+kNN(corr_list=corr_list, y_axis='total_cases_per_million', file='kNN_results.txt', one_sample_per_country=True)
+
 """
-countries_histogram('new_deaths_per_million', countries_entry, logy=True)
 countries_plot(x_axis, y_axis, countries_entry, mode='line', regression=False, logy=False, world_delta=False)
-linear_rate_corr(corr1, corr2, corr_name, y_axis='total_cases_per_million', make_bins=False, regression=True, logy=True, date=CUSTOM_DATE)
-inter_countries_plot(x_axis, y_axis, mode='scatter', mean=True, make_bins=True, regression=True)
+inter_countries_plot(x_axis='k_v/c', y_axis='total_cases_per_million', mode='scatter', mean=False, make_bins=False, regression=False, date=CUSTOM_DATE)
 """
-kNN(corr_list, y_axis, file='kNN_results.txt', one_sample_per_country=True)
