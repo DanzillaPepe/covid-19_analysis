@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from math import ceil
 
@@ -19,7 +20,7 @@ def plot_regression_line(xs, ys, ax, color):
     b = intercept(xs, ys)
     left_border, righht_border = xs.min() * 0.9, xs.max() * 1.1
     step = (righht_border - left_border) / consts.BINS
-    s = pd.Series(range(int(left_border), int(righht_border), ceil(step)), dtype='float64')
+    s = pd.Series(np.arange(left_border, righht_border, step))
 
     df = pd.DataFrame({0: s, 1: s.map(regression_line(k, b))})
     df.plot(0, 1,

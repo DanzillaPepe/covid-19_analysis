@@ -13,18 +13,21 @@ def load_data():
 
 def preprocess(df, pre_scrub):
     df_prepr = scrub_data(df, pre_scrub)
-    r_list_d = list()
     for country in consts.COUNTRIES_LIST:
         df_c = country_truncation(df_prepr, country)
         xs = df_c['total_cases']
 
         ys = df_c['total_vaccinations']
         k_vc = linear_regression.slope(xs, ys)
-        df_prepr.loc[df['location'] == country, 'k_v/c'] = k_vc
+        df_prepr.loc[df_prepr['location'] == country, 'k_v/c'] = k_vc
 
         ys = df_c['total_deaths']
         k_dc = linear_regression.slope(xs, ys)
-        df_prepr.loc[df['location'] == country, 'k_d/c'] = k_dc
+        df_prepr.loc[df_prepr['location'] == country, 'k_d/c'] = k_dc
+
+        male_smokers = df_c['male_smokers'].mean()
+        female_smokers = df_c['female_smokers'].mean()
+        df_prepr.loc[df_prepr['location'] == country, 'smokers'] = (male_smokers + female_smokers) / 2
 
     return df_prepr
 
@@ -65,8 +68,10 @@ def scrub_data(df, scrub, **params):
 def load_preprocess_scrub(scrub=None, **params):
     df = load_data()
     to_scrub = tools.make_list(scrub)
-    df = preprocess(df,
-                    [column for column in to_scrub if column not in consts.MY_COLUMNS] + consts.MY_COLUMNS_DEPENDENCIES)
+    pre_scrub = [column for column in to_scrub if column not in consts.MY_COLUMNS.keys()] + \
+                list(set().union(*[consts.MY_COLUMNS[my_column] for my_column in consts.MY_COLUMNS.keys() if
+                                   my_column in scrub]))
+    df = preprocess(df, pre_scrub)
     df = scrub_data(df, to_scrub, **params)
 
     return df

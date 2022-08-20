@@ -1,0 +1,23 @@
+Guessed parameter                     :        total_cases_per_million
+Best score                            :        0.93
+Optimal weights                       
+    1. median_age                     :        182.01
+    2. k_v/c                          :        165.58
+    3. cardiovasc_death_rate          :        158.47
+    4. human_development_index        :        136.36
+    5. aged_70_older                  :        130.70
+    6. diabetes_prevalence            :        87.35
+    7. population_density             :        84.00
+    8. aged_65_older                  :        77.69
+    9. stringency_index               :        26.83
+    10. hospital_beds_per_thousand    :        21.34
+    11. smokers                       :        10.90
+    12. gdp_per_capita                :        2.16
+
+Iterations performed                  :        5756462
+Annealing time (seconds)              :        5869.33
+All samples                           :        124
+Including                             
+    1. Training samples               :        111
+    2. Testing samples                :        13
+

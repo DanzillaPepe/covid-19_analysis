@@ -14,7 +14,7 @@ LINE_WIDTH = 3
 X_TICKS = 25
 Y_TICKS = 20
 CUSTOM_DATE = dt.datetime.strptime('18.08.2022', '%d.%m.%Y')
-BINS = 60
+BINS = 80
 
 LEFT_MARGIN = 0.1
 RIGHT_MARGIN = 0.95
@@ -32,8 +32,11 @@ TICKS_STYLE = {'family': 'DejaVu Sans',
 
 matplotlib.rc('font', **TICKS_STYLE)
 
-MY_COLUMNS = ['k_v/c', 'k_d/c']
-MY_COLUMNS_DEPENDENCIES = ['total_cases', 'total_vaccinations', 'total_deaths']
+MY_COLUMNS = {
+    'k_v/c': ['total_cases', 'total_vaccinations'],
+    'k_d/c': ['total_cases', 'total_deaths'],
+    'smokers': ['male_smokers', 'female_smokers']
+}
 
 averageScoreDelta = 0.05
 tMax = 1.0 * averageScoreDelta

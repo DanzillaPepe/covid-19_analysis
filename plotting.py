@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +20,6 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
 
     logy = params.get('logy')
 
-    n = len(df_list[0][x_axis])
     for i in range(len(df_list)):
         df = df_list[i]
         color = i % len(consts.COLORS)
@@ -44,14 +45,6 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
             ys = df[y_axis]
         label = labels[i]
 
-        if params.get('mean'):
-            values = df[[x_axis, y_axis]]
-            new_ys = list()
-            for x_value in xs.to_numpy():
-                y_series = values[values[x_axis] == x_value][y_axis]
-                new_ys.append(y_series.mean())
-            ys = pd.Series(new_ys)
-
         if params.get('make_bins'):
             values = df[[x_axis, y_axis]]
 
@@ -59,10 +52,13 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
             step = (xs.max() - xs.min()) / consts.BINS
             for bin_id in range(consts.BINS):
                 x_value = 0.5 * step + bin_id * step
-                new_xs.append(x_value)
                 y_series = values[(x_value - 0.5 * step <= values[x_axis]) & (values[x_axis] <= x_value + 0.5 * step)][
                     y_axis]
-                new_ys.append(y_series.mean())
+                y_value = y_series.mean()
+
+                new_xs.append(x_value)
+                new_ys.append(y_value)
+
             xs, ys = pd.Series(new_xs), pd.Series(new_ys)
 
         if params.get('world_delta'):
@@ -77,7 +73,7 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
             ys = pd.Series(new_ys)
 
         if logy:
-            ys = ys.apply(np.log).apply(lambda x: x if not tools.is_inf(x) and not tools.is_nan(x) else 0)
+            ys = ys.apply(np.log).apply(lambda x: x if not tools.is_inf(x) and not tools.is_nan(x) else math.nan)
 
         r = ys.corr(xs)
         label += '\nr = {:0.2f}'.format(r)
@@ -89,6 +85,7 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
             label = label.lstrip()
 
         df_rendered = pd.DataFrame(np.array([xs, ys]).T)
+        df_rendered = data_loading.scrub_data(df_rendered, [0, 1])
         if mode == 'scatter':
             df_rendered.plot.scatter(0, 1,
                                      grid=True,
@@ -127,7 +124,6 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
     plt.locator_params(axis='x', tight=True, nbins=consts.X_TICKS)
     if not logy:
         plt.locator_params(axis='y', tight=True, nbins=consts.Y_TICKS)
-
 
     plt.show()
 
@@ -232,6 +228,6 @@ def linear_rate_corr(corr1, corr2, corr_name, y_axis, **params):
 def inter_countries_plot(x_axis, y_axis, label=None, mode='scatter', **params):
     scrub = [x_axis, y_axis]
     df = data_loading.load_preprocess_scrub(scrub, **params)
-    df = df[df[x_axis] < 100]
+    df = df[df[y_axis] < 1000]
 
     plot(df, x_axis, y_axis, label, mode=mode, **params)

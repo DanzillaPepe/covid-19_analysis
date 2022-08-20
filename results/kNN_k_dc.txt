@@ -1,19 +1,19 @@
 Guessed parameter                     :        k_d/c
-Best score                            :        0.48
+Best score                            :        0.63
 Optimal weights                       
-    1. population_density             :        334.20
-    2. hospital_beds_per_thousand     :        239.40
-    3. k_v/c                          :        102.05
-    4. aged_70_older                  :        61.53
-    5. aged_65_older                  :        53.22
-    6. diabetes_prevalence            :        29.13
-    7. median_age                     :        24.09
-    8. gdp_per_capita                 :        22.23
-    9. cardiovasc_death_rate          :        7.80
-    10. stringency_index              :        4.83
+    1. stringency_index               :        346.76
+    2. hospital_beds_per_thousand     :        322.59
+    3. median_age                     :        254.67
+    4. k_v/c                          :        218.52
+    5. population_density             :        136.90
+    6. cardiovasc_death_rate          :        50.78
+    7. aged_70_older                  :        49.53
+    8. diabetes_prevalence            :        16.08
+    9. aged_65_older                  :        14.79
+    10. gdp_per_capita                :        0.10
 
 Iterations performed                  :        5756462
-Annealing time (seconds)              :        6271.69
+Annealing time (seconds)              :        6751.60
 All samples                           :        148
 Including                             
     1. Training samples               :        133
