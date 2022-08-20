@@ -9,11 +9,11 @@ COLORS = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 TAB = '    '
 
 FIG_SIZE = (21, 14)
-DOT_SIZE = 24
+DOT_SIZE = 42
 LINE_WIDTH = 3
-X_TICKS = 30
+X_TICKS = 25
 Y_TICKS = 20
-CUSTOM_DATE = dt.datetime.strptime('9.08.2022', '%d.%m.%Y')
+CUSTOM_DATE = dt.datetime.strptime('18.08.2022', '%d.%m.%Y')
 BINS = 60
 
 LEFT_MARGIN = 0.1
@@ -32,8 +32,12 @@ TICKS_STYLE = {'family': 'DejaVu Sans',
 
 matplotlib.rc('font', **TICKS_STYLE)
 
+MY_COLUMNS = ['k_v/c', 'k_d/c']
+MY_COLUMNS_DEPENDENCIES = ['total_cases', 'total_vaccinations', 'total_deaths']
+
 averageScoreDelta = 0.05
 tMax = 1.0 * averageScoreDelta
 tMin = 0.1 * averageScoreDelta
-tMult = 0.99
-# todo 0.9999996
+tMult = 0.9999996
+
+# tMult = 0.9999996

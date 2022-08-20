@@ -11,10 +11,11 @@ def load_data():
     return df
 
 
-def preprocess(df):
-    df_prepr = df.copy()
+def preprocess(df, pre_scrub):
+    df_prepr = scrub_data(df, pre_scrub)
+    r_list_d = list()
     for country in consts.COUNTRIES_LIST:
-        df_c = country_truncation(df, country)
+        df_c = country_truncation(df_prepr, country)
         xs = df_c['total_cases']
 
         ys = df_c['total_vaccinations']
@@ -24,13 +25,13 @@ def preprocess(df):
         ys = df_c['total_deaths']
         k_dc = linear_regression.slope(xs, ys)
         df_prepr.loc[df['location'] == country, 'k_d/c'] = k_dc
+
     return df_prepr
 
 
 def scrub_data(df, scrub, **params):
     df_scrubbed = df.copy()
-    to_scrub = tools.make_list(scrub)
-    for column in to_scrub:
+    for column in scrub:
         df_scrubbed = df_scrubbed[df_scrubbed[column].notna()]
 
     if params.get('countries'):
@@ -48,7 +49,10 @@ def scrub_data(df, scrub, **params):
                 continue
             new_df['location'].append(country)
             for column in scrub:
-                to_add = df_c[column].mean(skipna=True)
+                if column == 'total_cases_per_million':
+                    to_add = df_c[column].max()
+                else:
+                    to_add = df_c[column].mean(skipna=True)
 
                 if not new_df.get(column):
                     new_df[column] = [to_add]
@@ -60,8 +64,10 @@ def scrub_data(df, scrub, **params):
 
 def load_preprocess_scrub(scrub=None, **params):
     df = load_data()
-    df = preprocess(df)
-    df = scrub_data(df, scrub, **params)
+    to_scrub = tools.make_list(scrub)
+    df = preprocess(df,
+                    [column for column in to_scrub if column not in consts.MY_COLUMNS] + consts.MY_COLUMNS_DEPENDENCIES)
+    df = scrub_data(df, to_scrub, **params)
 
     return df
 

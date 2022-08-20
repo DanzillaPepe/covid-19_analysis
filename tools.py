@@ -40,10 +40,11 @@ def get_date_str(date):
     date_str = '{year}-{zero1}{month}-{zero2}{day}'.format(day=date.day,
                                                            month=date.month,
                                                            year=date.year,
-                                                           zero1="0" if date.day < 10 else "",
-                                                           zero2="0" if date.month < 10 else "",
+                                                           zero1="0" if date.month < 10 else '',
+                                                           zero2="0" if date.day < 10 else '',
                                                            )
     return date_str
+
 
 def write_formatted(file, label_format, formats, label, value):
     file.write((label_format + formats[type(value)]).format(label, value))

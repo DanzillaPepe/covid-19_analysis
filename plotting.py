@@ -42,7 +42,6 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
             xs, ys = pd.Series(new_xs), pd.Series(new_ys)
         else:
             ys = df[y_axis]
-
         label = labels[i]
 
         if params.get('mean'):
@@ -128,6 +127,7 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
     plt.locator_params(axis='x', tight=True, nbins=consts.X_TICKS)
     if not logy:
         plt.locator_params(axis='y', tight=True, nbins=consts.Y_TICKS)
+
 
     plt.show()
 
@@ -229,9 +229,9 @@ def linear_rate_corr(corr1, corr2, corr_name, y_axis, **params):
     plot(df, corr_name, y_axis, None, mode='scatter', **params)
 
 
-def inter_countries_plot(x_axis, y_axis, mode, **params):
+def inter_countries_plot(x_axis, y_axis, label=None, mode='scatter', **params):
     scrub = [x_axis, y_axis]
     df = data_loading.load_preprocess_scrub(scrub, **params)
     df = df[df[x_axis] < 100]
 
-    plot(df, x_axis, y_axis, None, mode=mode, **params)
+    plot(df, x_axis, y_axis, label, mode=mode, **params)
