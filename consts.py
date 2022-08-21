@@ -14,7 +14,7 @@ LINE_WIDTH = 3
 X_TICKS = 25
 Y_TICKS = 20
 CUSTOM_DATE = dt.datetime.strptime('18.08.2022', '%d.%m.%Y')
-BINS = 80
+BINS = 120
 
 LEFT_MARGIN = 0.1
 RIGHT_MARGIN = 0.95
@@ -41,6 +41,6 @@ MY_COLUMNS = {
 averageScoreDelta = 0.05
 tMax = 1.0 * averageScoreDelta
 tMin = 0.1 * averageScoreDelta
-tMult = 0.9999996
+tMult = 0.9999999
 
-# tMult = 0.9999996
+# tMult = 0.9999999

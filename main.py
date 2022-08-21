@@ -31,23 +31,24 @@ corr_list = [
     'stringency_index'
 ]
 
-
-# kNN.kNN(corr_list=corr_list, y_axis='total_deaths_per_million', file='kNN_results.txt', one_sample_per_country=True)
-
-"""
-countries_plot(x_axis, y_axis, countries_entry, mode='line', regression=False, logy=False, world_delta=False)
-
-
-
+kNN.kNN(corr_list=corr_list, y_axis='total_deaths_per_million', file='kNN_results.txt', one_sample_per_country=True)
 
 """
-
-plotting.inter_countries_plot(x_axis='k_d/c', y_axis='population_density',
+plotting.inter_countries_plot(x_axis='new_deaths_per_million', y_axis='frequency',
                               label=None,
                               mode='scatter',
                               mean=False,
                               make_bins=True,
                               logy=False,
                               regression=True,
-                              date=consts.CUSTOM_DATE,
+                              date=None,
                               one_sample_per_country=False)
+
+plotting.countries_histogram(x_axis='new_cases',
+                             countries=countries_entry[2],
+                             label=None,
+                             logy=False,
+                             date=None,
+                             one_sample_per_country=False,
+                             center=True)
+"""

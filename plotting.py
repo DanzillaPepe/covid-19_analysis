@@ -43,6 +43,7 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
             xs, ys = pd.Series(new_xs), pd.Series(new_ys)
         else:
             ys = df[y_axis]
+
         label = labels[i]
 
         if params.get('make_bins'):
@@ -79,13 +80,17 @@ def plot(df_list, x_axis, y_axis, labels, mode, **params):
         label += '\nr = {:0.2f}'.format(r)
         label = label.strip()
 
+        df_rendered = pd.DataFrame(np.array([xs, ys]).T)
+        df_rendered = data_loading.scrub_data(df_rendered, [0, 1])
+
         if params.get('regression'):
+            xs = df_rendered[0]
+            ys = df_rendered[1]
+
             k, r_2 = linear_regression.plot_regression_line(xs, ys, ax, (color + 1) % len(consts.COLORS))
             label += '\nk = {:0.2f}\nR^2 = {:0.2f}'.format(k, r_2)
             label = label.lstrip()
 
-        df_rendered = pd.DataFrame(np.array([xs, ys]).T)
-        df_rendered = data_loading.scrub_data(df_rendered, [0, 1])
         if mode == 'scatter':
             df_rendered.plot.scatter(0, 1,
                                      grid=True,
@@ -142,6 +147,10 @@ def hist(df_list, x_axis, bins, labels=None, **params):
         xs = df[x_axis]
 
         label = labels[i]
+
+        if params.get('center'):
+            xs = xs - xs.mean()
+            label += '\nskew = {:0.2f}'.format(xs.skew())
 
         df_rendered = pd.DataFrame(xs)
         df_rendered.plot.hist(bins=bins,
