@@ -1,27 +1,14 @@
 import consts
-import data_loading
 import plotting
 import kNN
-
-countries_entry = ['United States',
-                   'China',
-                   'Russia',
-                   'Spain',
-                   'Ukraine',
-                   'Germany',
-                   'Georgia',
-                   'Germany',
-                   'Zimbabwe']
 
 corr_list = [
     'population_density',
     'gdp_per_capita',
     'hospital_beds_per_thousand',
-    'human_development_index',
 
     'diabetes_prevalence',
     'cardiovasc_death_rate',
-    'smokers',
 
     'median_age',
     'aged_65_older',
