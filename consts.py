@@ -42,5 +42,3 @@ averageScoreDelta = 0.05
 tMax = 1.0 * averageScoreDelta
 tMin = 0.1 * averageScoreDelta
 tMult = 0.9999999
-
-# tMult = 0.9999999
